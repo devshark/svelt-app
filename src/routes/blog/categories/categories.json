@@ -1,0 +1,46 @@
+{
+  "categories": [
+    {
+      "title": "Crypto 101",
+      "slug": "crypto-101",
+      "description": "",
+      "content": "Lorem ipsum [Crypto 101]"
+    },
+    {
+      "title": "Preview",
+      "slug": "preview",
+      "description": "",
+      "content": "Lorem ipsum [Preview]"
+    },
+    {
+      "title": "Casino",
+      "slug": "casino",
+      "description": "",
+      "content": "Lorem ipsum [Casino]"
+    },
+    {
+      "title": "Sports",
+      "slug": "sports",
+      "description": "",
+      "content": "Lorem ipsum [Sports]"
+    },
+    {
+      "title": "In The Cloud",
+      "slug": "in-the-cloud",
+      "description": "",
+      "content": "Lorem ipsum [In The Cloud]"
+    },
+    {
+      "title": "Promotions",
+      "slug": "promotions",
+      "description": "",
+      "content": "Lorem ipsum [Promotions]"
+    },
+    {
+      "title": "Betting Strategy",
+      "slug": "betting-strategy",
+      "description": "",
+      "content": "Lorem ipsum [Betting Strategy]"
+    }
+  ]
+}

@@ -8,7 +8,24 @@ const config = {
 
 	kit: {
 		// hydrate the <div id="svelte"> element in src/app.html
-		target: '#svelte'
+		target: '#svelte',
+		vite: {
+			ssr: {
+				noExternal: [
+					'@smui/button',
+					'@smui/fab',
+					'@smui/icon-button',
+					'@smui/list',
+					'@smui/paper',
+					'@smui/select',
+					'@smui/textfield'
+				]
+			}
+		},
+		// hydrate the <div id="svelte"> element in src/app.html
+		// adapter: node(),
+		hydrate: true,
+		ssr: true
 	}
 };
 
