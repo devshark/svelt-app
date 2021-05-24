@@ -2,6 +2,7 @@
 import http from 'http';
 import { server as WebSocketServer } from 'websocket';
 import axios from 'axios';
+import amqp from 'amqplib';
 
 const server = http.createServer();
 const foaasUrl = 'https://foaas.herokuapp.com';
@@ -19,45 +20,67 @@ const random = (min, max) => Math.floor(Math.random() * (max - min)) + min,
 
 let allOperations = [];
 
-async function sendRandomMessage() {
-	for (const connection of connections) {
-		if (!connection.connected) continue;
+// async function sendRandomMessage() {
+// 	for (const connection of connections) {
+// 		if (!connection.connected) continue;
 
-		const timeout = 1000 * Math.random();
-		const operation = allOperations[random(0, allOperations.length - 1)];
+// 		const timeout = 1000 * Math.random();
+// 		const operation = allOperations[random(0, allOperations.length - 1)];
 
-		if (!operation) break;
+// 		if (!operation) break;
 
-		const names = await axios
-			.get(namesAAS, {
-				params: {
-					count: operation.fields.length,
-					with_surname: 'true',
-					frequency: 'all'
-				}
-			})
-			.then((res) => res.data);
-		// console.log(operation, names);
-		let url = foaasUrl + operation.url;
-		for (let i = 0; i < operation.fields.length; i++) {
-			url = url.replace(':' + operation.fields[i].field, names[i]);
-		}
-		const message = await axios
-			.get(url)
-			.then((res) => res.data)
-			.then((msg) => JSON.stringify(msg));
+// 		const names = await axios
+// 			.get(namesAAS, {
+// 				params: {
+// 					count: operation.fields.length,
+// 					with_surname: 'true',
+// 					frequency: 'all'
+// 				}
+// 			})
+// 			.then((res) => res.data);
+// 		// console.log(operation, names);
+// 		let url = foaasUrl + operation.url;
+// 		for (let i = 0; i < operation.fields.length; i++) {
+// 			url = url.replace(':' + operation.fields[i].field, names[i]);
+// 		}
+// 		const message = await axios
+// 			.get(url)
+// 			.then((res) => res.data)
+// 			.then((msg) => JSON.stringify(msg));
 
-		console.log(message);
+// 		console.log(message);
 
-		setTimeout(async () => {
-			connection.sendUTF(message);
-			await sendRandomMessage();
-		}, timeout);
-	}
-}
+// 		setTimeout(async () => {
+// 			connection.sendUTF(message);
+// 			await sendRandomMessage();
+// 		}, timeout);
+// 	}
+// }
 
-void (async function () {
-	allOperations = await axios.get(foaasUrl + '/operations').then((res) => res.data);
+void (async function (queue) {
+	// allOperations = await axios.get(foaasUrl + '/operations').then((res) => res.data);
+
+	const connection = await amqp.connect({
+		hostname: 'localhost'
+	});
+
+	process.on('SIGTERM', async () => {
+		await channel.waitForConfirms();
+		await connection.close();
+	});
+
+	const channel = await connection.createConfirmChannel();
+
+	await channel.assertQueue(queue, {
+		durable: true,
+		autoDelete: false,
+		exclusive: false
+	});
+
+	// await channel.purgeQueue(queue)
+
+	await channel.bindQueue(queue, 'amq.topic', '*.*.*.*');
+	await channel.bindExchange('amq.topic', 'amq.topic', '*.*.*.*');
 
 	wsServer.on('request', async function (request) {
 		const connection = request.accept(null, request.origin);
@@ -65,10 +88,24 @@ void (async function () {
 		connection.on('message', async function (message) {
 			console.log('Received Message:', message.utf8Data);
 			// connection.sendUTF('Hi this is WebSocket server!');
-			await sendRandomMessage();
+
+			// await sendRandomMessage();
 		});
+
+		await channel.consume(
+			queue,
+			(msg) => {
+				if (!msg) return;
+				connection.sendUTF(msg.content.toString());
+				console.log(' [x] Received %s', msg.content.toString());
+			},
+			{
+				noAck: false
+			}
+		);
+
 		connection.on('close', function (reasonCode, description) {
 			console.log('Client has disconnected.', reasonCode, description);
 		});
 	});
-})();
+})('svelt-app');

@@ -8,7 +8,7 @@
     "preview": "svelte-kit preview",
     "lint": "prettier --check --plugin-search-dir=. . && eslint --ignore-path .gitignore .",
     "format": "prettier --write --plugin-search-dir=. .",
-    "prepare": "yarn build && yarn vite-workaround && yarn smui-theme-dark",
+    "prepare": "yarn vite-workaround && yarn smui-theme-dark && yarn build",
     "vite-workaround": "node _helper/vite-workaround.js",
     "smui-theme-dark": "smui-theme compile static/smui-dark.css -i src/theme/dark",
     "websocket": "nodemon websocket-server.js"
@@ -17,6 +17,7 @@
     "@sveltejs/kit": "next",
     "@typescript-eslint/eslint-plugin": "^4.19.0",
     "@typescript-eslint/parser": "^4.19.0",
+    "amqplib": "^0.8.0",
     "eslint": "^7.22.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-svelte3": "^3.2.0",
