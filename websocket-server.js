@@ -1,12 +1,12 @@
 // Node.js WebSocket server script
 import http from 'http';
 import { server as WebSocketServer } from 'websocket';
-import axios from 'axios';
+// import axios from 'axios';
 import amqp from 'amqplib';
 
 const server = http.createServer();
-const foaasUrl = 'https://foaas.herokuapp.com';
-const namesAAS = 'https://namey.muffinlabs.com/name.json'; //?count=1&with_surname=true&frequency=all'
+// const foaasUrl = 'https://foaas.herokuapp.com';
+// const namesAAS = 'https://namey.muffinlabs.com/name.json'; //?count=1&with_surname=true&frequency=all'
 
 server.listen(9898, () => {
 	console.log('opened server on', server.address().port);
@@ -15,10 +15,10 @@ const wsServer = new WebSocketServer({
 	httpServer: server
 });
 
-const random = (min, max) => Math.floor(Math.random() * (max - min)) + min,
-	connections = [];
+// const random = (min, max) => Math.floor(Math.random() * (max - min)) + min,
+// 	connections = [];
 
-let allOperations = [];
+// let allOperations = [];
 
 // async function sendRandomMessage() {
 // 	for (const connection of connections) {
@@ -61,13 +61,22 @@ void (async function (queue) {
 	// allOperations = await axios.get(foaasUrl + '/operations').then((res) => res.data);
 
 	const connection = await amqp.connect({
-		hostname: 'localhost'
+		hostname: 'localhost',
+		username: 'digong',
+		password: 'palpak',
+		vhost: 'du30'
 	});
 
-	process.on('SIGTERM', async () => {
+	const closeMq = async () => {
 		await channel.waitForConfirms();
+		await channel.close();
 		await connection.close();
-	});
+		console.log('closing MQ channel and connection');
+	};
+
+	process.on('SIGTERM', closeMq);
+
+	process.on('exit', closeMq);
 
 	const channel = await connection.createConfirmChannel();
 
@@ -77,14 +86,15 @@ void (async function (queue) {
 		exclusive: false
 	});
 
-	// await channel.purgeQueue(queue)
+	await channel.purgeQueue(queue);
 
 	await channel.bindQueue(queue, 'amq.topic', '*.*.*.*');
 	await channel.bindExchange('amq.topic', 'amq.topic', '*.*.*.*');
 
 	wsServer.on('request', async function (request) {
+		console.log(request);
 		const connection = request.accept(null, request.origin);
-		connections.push(connection);
+		// connections.push(connection);
 		connection.on('message', async function (message) {
 			console.log('Received Message:', message.utf8Data);
 			// connection.sendUTF('Hi this is WebSocket server!');
@@ -104,7 +114,8 @@ void (async function (queue) {
 			}
 		);
 
-		connection.on('close', function (reasonCode, description) {
+		connection.on('close', async function (reasonCode, description) {
+			await closeMq();
 			console.log('Client has disconnected.', reasonCode, description);
 		});
 	});
